@@ -1,4 +1,4 @@
 LemHMI
 ======
 
-Display de temperatura e humidade em Android, acessando dados via bluetooth.
+Display de temperatura e umidade em Android, acessando dados via bluetooth.
