@@ -9,8 +9,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.GraphView.GraphViewData;
+import com.jjoe64.graphview.GraphViewSeries;
+import com.jjoe64.graphview.LineGraphView;
 
 public class MainActivity extends Activity {
 
@@ -32,14 +38,19 @@ public class MainActivity extends Activity {
 	private String mConnectedDeviceName = null;
 	private BluetoothAdapter mBluetoothAdapter = null;
 	private BluetoothConnectService mConnectService = null;
-	
+
 	private TextView stateTextView = null;
+	private GraphView temperatureGraphView;
+	private GraphView humidityGraphView;
+
+	private GraphViewSeries exampleSeries1;
+	private GraphViewSeries exampleSeries2;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
+
 		stateTextView = (TextView) findViewById(R.id.stateTextView);
 
 		// Get local Bluetooth adapter
@@ -47,8 +58,34 @@ public class MainActivity extends Activity {
 
 		// If the adapter is null, then Bluetooth is not supported
 		if (mBluetoothAdapter == null) {
-			Toast.makeText(this, "O dispositivo não suporta acesso bluetooth", Toast.LENGTH_LONG).show();
+			Toast.makeText(this, "O dispositivo nÃ£o suporta acesso bluetooth",
+					Toast.LENGTH_LONG).show();
 		}
+
+		exampleSeries1 = new GraphViewSeries(new GraphViewData[] {
+				new GraphViewData(1, 2.0d),
+				new GraphViewData(2, 1.5d),
+				new GraphViewData(2.5, 3.0d), // another frequency
+				new GraphViewData(3, 2.5d), new GraphViewData(4, 1.0d),
+				new GraphViewData(5, 3.0d), new GraphViewData(6, 4.0d) });
+		exampleSeries2 = new GraphViewSeries(new GraphViewData[] {
+				new GraphViewData(1, 2.0d),
+				new GraphViewData(2, 1.5d),
+				new GraphViewData(2.5, 3.0d), // another frequency
+				new GraphViewData(3, 2.5d), new GraphViewData(4, 1.0d),
+				new GraphViewData(5, 3.0d) });
+
+		temperatureGraphView = new LineGraphView(this, "Temperatura");
+		temperatureGraphView.addSeries(exampleSeries1);
+
+		humidityGraphView = new LineGraphView(this, "Umidade");
+		humidityGraphView.addSeries(exampleSeries2);
+
+		LinearLayout temperatureChartTableLayout = (LinearLayout) findViewById(R.id.temperatureChartTableLayout);
+		LinearLayout humidityChartTableLayout = (LinearLayout) findViewById(R.id.humidityChartTableLayout);
+
+		temperatureChartTableLayout.addView(temperatureGraphView);
+		humidityChartTableLayout.addView(humidityGraphView);
 	}
 
 	// OnClick event
@@ -56,7 +93,8 @@ public class MainActivity extends Activity {
 		// If BT is not on, request that it be enabled.
 		// setupCommand() will then be called during onActivityResult
 		if (!mBluetoothAdapter.isEnabled()) {
-			Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+			Intent enableIntent = new Intent(
+					BluetoothAdapter.ACTION_REQUEST_ENABLE);
 			startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
 		} else {
 			if (mConnectService == null) {
@@ -87,8 +125,10 @@ public class MainActivity extends Activity {
 
 	private void ensureDiscoverable() {
 		if (mBluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
-			Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-			discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+			Intent discoverableIntent = new Intent(
+					BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+			discoverableIntent.putExtra(
+					BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
 			startActivity(discoverableIntent);
 		}
 	}
@@ -99,9 +139,11 @@ public class MainActivity extends Activity {
 			// When DeviceListActivity returns with a device to connect
 			if (resultCode == Activity.RESULT_OK) {
 				// Get the device MAC address
-				String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+				String address = data.getExtras().getString(
+						DeviceListActivity.EXTRA_DEVICE_ADDRESS);
 				// Get the BLuetoothDevice object
-				BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+				BluetoothDevice device = mBluetoothAdapter
+						.getRemoteDevice(address);
 				// Attempt to connect to the device
 				mConnectService.connect(device);
 			}
@@ -113,7 +155,9 @@ public class MainActivity extends Activity {
 				setupCommand();
 			} else {
 				// User did not enable Bluetooth or an error occured
-				Toast.makeText(this, "Não foi possível conectar ao dispositivo bluetooth", Toast.LENGTH_SHORT).show();
+				Toast.makeText(this,
+						"Nï¿½o foi possï¿½vel conectar ao dispositivo bluetooth",
+						Toast.LENGTH_SHORT).show();
 				finish();
 			}
 		}
@@ -129,30 +173,37 @@ public class MainActivity extends Activity {
 				switch (msg.arg1) {
 				case BluetoothConnectService.STATE_CONNECTED:
 					stateTextView.setText("Conectado");
-					Toast.makeText(MainActivity.this, "Bluetooth conectado", Toast.LENGTH_SHORT).show();
+					Toast.makeText(MainActivity.this, "Bluetooth conectado",
+							Toast.LENGTH_SHORT).show();
 					break;
 				case BluetoothConnectService.STATE_CONNECTING:
 					stateTextView.setText("Conectando");
-					Toast.makeText(MainActivity.this, "Conectando bluetooth", Toast.LENGTH_SHORT).show();
+					Toast.makeText(MainActivity.this, "Conectando bluetooth",
+							Toast.LENGTH_SHORT).show();
 					break;
 				case BluetoothConnectService.STATE_LISTEN:
 					stateTextView.setText("Aguardando");
-					Toast.makeText(MainActivity.this, "Aguardando bluetooth", Toast.LENGTH_SHORT).show();
+					Toast.makeText(MainActivity.this, "Aguardando bluetooth",
+							Toast.LENGTH_SHORT).show();
 					break;
 				case BluetoothConnectService.STATE_NONE:
 					stateTextView.setText("Desconectado");
-					Toast.makeText(MainActivity.this, "Bluetooth desconectado", Toast.LENGTH_SHORT).show();
+					Toast.makeText(MainActivity.this, "Bluetooth desconectado",
+							Toast.LENGTH_SHORT).show();
 					break;
 				}
 				break;
 			case MESSAGE_DEVICE_NAME:
 				// save the connected device's name
 				mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
-				Toast.makeText(getApplicationContext(), "Conectado a " + mConnectedDeviceName, Toast.LENGTH_SHORT)
-						.show();
+				Toast.makeText(getApplicationContext(),
+						"Conectado a " + mConnectedDeviceName,
+						Toast.LENGTH_SHORT).show();
 				break;
 			case MESSAGE_TOAST:
-				Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST), Toast.LENGTH_SHORT).show();
+				Toast.makeText(getApplicationContext(),
+						msg.getData().getString(TOAST), Toast.LENGTH_SHORT)
+						.show();
 				break;
 			}
 		}
